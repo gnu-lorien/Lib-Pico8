@@ -77,16 +77,16 @@ function find_path_breadth(x, y, limit, accept_child, accept_target)
 	return targets
 end
 
-
 -- @param x coordinate to start path finding at
 -- @param y coordinate to start path finding at
 -- @param tx x coordinate of the path target
 -- @param ty y coordinate of the path target
 -- @param accept_child  callback method (x,y), return true if you accept this child
+-- @param no_path_func  callback method (path), return the starting pv when we fail to find one for target
 -- @return a table of coordinates matching what ever is defined in the callbacks.
 -- The result might look something like this
 -- {{x=...,y=...},...}
-function find_shortest_path_breadth(x, y, tx, ty, accept_child)
+function find_shortest_path_breadth(x, y, tx, ty, accept_child, no_path_func)
 
 	local visited = {}
 	local path = {}
@@ -123,6 +123,7 @@ function find_shortest_path_breadth(x, y, tx, ty, accept_child)
 					else
 						write=write + 1  queue[write] = { cx, cy, newcost } -- push
 					end
+				else
 				end
 			end
 		end
@@ -131,12 +132,29 @@ function find_shortest_path_breadth(x, y, tx, ty, accept_child)
 	-- build reverse path
 	local reversed = {{x=tx, y=ty}}
 	local pv = path[tx..","..ty]
+	if pv == nil then
+		if no_path_func != nil then
+			pv = no_path_func(path)
+			if pv == nil then
+				return nil
+			end
+			reversed = {}
+		else
+			return nil
+		end
+	end
 	while true do
+		if pv.to == nil then
+			break
+		end
 		if pv.to.x == x and pv.to.y == y then
 			break
 		end
 		add(reversed, pv.to)
-		pv = path[pv.to.x..","..pv.to.y]
+		pv = path[e]
+		if pv == nil then
+			break
+		end
 	end
 
 	-- return forward path
